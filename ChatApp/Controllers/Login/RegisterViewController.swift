@@ -7,9 +7,12 @@
 
 import UIKit
 import FirebaseAuth
+import JGProgressHUD
 
 class RegisterViewController: UIViewController {
 
+    private let spinner = JGProgressHUD(style: .dark)
+    
     private let scrollView: UIScrollView = {
         let scrollView = UIScrollView()
         scrollView.clipsToBounds = true
@@ -18,7 +21,7 @@ class RegisterViewController: UIViewController {
 
     private let imageView: UIImageView = {
         let imageView = UIImageView()
-        imageView.image = UIImage(systemName: "person")
+        imageView.image = UIImage(systemName: "person.circle")
         imageView.tintColor = .gray
         imageView.contentMode = .scaleAspectFill
         imageView.layer.masksToBounds = true
@@ -163,16 +166,39 @@ class RegisterViewController: UIViewController {
                   return
               }
         
+        spinner.show(in: view)
+        
         // firebase login
-        FirebaseAuth.Auth.auth().createUser(withEmail: email, password: password, completion: { authResult, error in
-            guard let result = authResult ,error == nil else {
-                print("fatal error")
+        
+        DatabaseManager.shared.userExists(with: email) {[weak self] exists in
+            guard let strongSelf = self else {
                 return
             }
-            let user = result.user
-            print("create success: \(user)")
-          
-        })
+            DispatchQueue.main.async {
+                strongSelf.spinner.dismiss()
+            }
+            
+            guard !exists else {
+                self?.alertUserLoginError(message: "입력하신 이메일은 이미 존재합니다.")
+                return
+            }
+            FirebaseAuth.Auth.auth().createUser(withEmail: email, password: password, completion: { authResult, error in
+                guard let strongSelf = self else {
+                    return
+                }
+                guard authResult != nil, error == nil else {
+                    print("fatal error")
+                    return
+                }
+                // database manager
+                DatabaseManager.shared.insetUser(with: ChatAppUser(firstName: firstName,
+                                                                   lastName: lastName, emailAddress: email))
+                
+                strongSelf.navigationController?.dismiss(animated: true, completion: nil)
+            })
+        }
+        
+        
     }
     
     @objc func didTapChangeProfile() {
@@ -182,8 +208,8 @@ class RegisterViewController: UIViewController {
         
     }
     
-    func alertUserLoginError() {
-        let alert = UIAlertController(title: "다시 시도하세요", message: "옳바르지 않은 정보입니다", preferredStyle: .alert)
+    func alertUserLoginError(message: String = "이미 존재하는 email입니다") {
+        let alert = UIAlertController(title: "다시 시도하세요", message: message, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "다시 시도하기", style: .cancel, handler: nil))
         present(alert, animated: true)
     }

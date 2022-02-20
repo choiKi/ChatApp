@@ -74,7 +74,7 @@ class LoginViewController: UIViewController {
         super.viewDidLoad()
         title = "로그인"
         // Do any additional setup after loading the view.
-        
+      
         view.backgroundColor = .white
         
         navigationItem.rightBarButtonItem = UIBarButtonItem(title: "회원가입", style: .done, target: self, action: #selector(didTapRegister))
@@ -85,10 +85,12 @@ class LoginViewController: UIViewController {
         passwordField.delegate = self
         
         view.addSubview(scrollView)
+       
         scrollView.addSubview(imageView)
         scrollView.addSubview(emailField)
         scrollView.addSubview(passwordField)
         scrollView.addSubview(loginButton)
+        
     }
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
